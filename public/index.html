@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Bruce - Password Strength Tester</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                <h1>Password Bruce</h1>
+            </div>
+            <p class="subtitle">Test your password strength against brute force attacks</p>
+        </header>
+
+        <main class="main-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-key"></i> Password Testing</h2>
+                    <p>Enter a password to test its strength against various attack methods</p>
+                </div>
+
+                <div class="form-section">
+                    <div class="input-group">
+                        <label for="password">Password to Test</label>
+                        <div class="password-input">
+                            <input type="password" id="password" placeholder="Enter password to test (supports UTF-8: 🔐 café naïve)">
+                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="attack-methods">
+                        <h3>Attack Method</h3>
+                        <div class="method-options">
+                            <label class="radio-option">
+                                <input type="radio" name="method" value="dictionary" checked>
+                                <span class="radio-custom"></span>
+                                <div class="method-info">
+                                    <strong>Dictionary Attack</strong>
+                                    <small>Tests against common passwords and variations</small>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="method" value="brute-force">
+                                <span class="radio-custom"></span>
+                                <div class="method-info">
+                                    <strong>Brute Force Attack</strong>
+                                    <small>Tries all possible combinations until found (with live progress)</small>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="brute-force-options" id="bruteForceOptions" style="display: none;">
+                        <h4>Character Sets</h4>
+                        <div class="checkbox-group">
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="charset" value="lowercase" checked>
+                                <span class="checkbox-custom"></span>
+                                Lowercase (a-z)
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="charset" value="uppercase">
+                                <span class="checkbox-custom"></span>
+                                Uppercase (A-Z)
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="charset" value="numbers">
+                                <span class="checkbox-custom"></span>
+                                Numbers (0-9)
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="charset" value="symbols">
+                                <span class="checkbox-custom"></span>
+                                Symbols (!@#$...)
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="charset" value="utf8">
+                                <span class="checkbox-custom"></span>
+                                UTF-8 (àáâ €£¥ 😀😃...)
+                            </label>
+                        </div>
+                        <div class="input-group">
+                            <label for="maxLength">Maximum Length to Test</label>
+                            <input type="number" id="maxLength" value="12" min="1" max="16">
+                            <small>Will prioritize the exact length of your password first</small>
+                        </div>
+                        <div class="warning-box">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Warning:</strong> Brute force attacks on long passwords may take a very long time. 
+                            The attack will try up to 10 million combinations before stopping. You'll see live progress updates!
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-primary" onclick="startBruteForce()">
+                            <i class="fas fa-play"></i>
+                            Start Attack
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="analyzePassword()">
+                            <i class="fas fa-chart-line"></i>
+                            Analyze Password
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="stopAttack()" id="stopButton" style="display: none;">
+                            <i class="fas fa-stop"></i>
+                            Stop Attack
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="live-progress" id="liveProgress" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-bolt"></i> Live Attack Progress</h2>
+                    </div>
+                    <div class="progress-content">
+                        <div class="progress-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Attempts:</span>
+                                <span class="stat-value" id="attemptCount">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Rate:</span>
+                                <span class="stat-value" id="attackRate">0/sec</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Elapsed:</span>
+                                <span class="stat-value" id="elapsedTime">0s</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Phase:</span>
+                                <span class="stat-value" id="currentPhase">Starting...</span>
+                            </div>
+                        </div>
+                        <div class="current-attempt">
+                            <div class="attempt-label">Currently trying:</div>
+                            <div class="attempt-password" id="currentPassword">-</div>
+                        </div>
+                        <div class="progress-message" id="progressMessage">Initializing attack...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-bar"></i> Results</h2>
+                    </div>
+                    <div id="resultsContent"></div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Testing password strength...</p>
+                <p><small>This may take a while for strong passwords...</small></p>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Educational Purpose Only:</strong> This tool is for demonstrating password security concepts. Never use it on passwords you don't own.
+            </div>
+            <div class="tips">
+                <h3>Password Security Tips:</h3>
+                <ul>
+                    <li>Use at least 12 characters</li>
+                    <li>Include uppercase, lowercase, numbers, and symbols</li>
+                    <li>Consider UTF-8 characters for extra security</li>
+                    <li>Avoid dictionary words and personal information</li>
+                    <li>Use a unique password for each account</li>
+                    <li>Consider using a password manager like NordPass</li>
+                </ul>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
